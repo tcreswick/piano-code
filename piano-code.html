@@ -312,10 +312,6 @@
         els.stateHint.textContent = 'Welcome back.';
         els.meter.classList.add('hidden');
         els.dots.classList.add('hidden');
-        addButton('Lock again', () => {
-          resetProgress(true);
-          setMode(STATE.LOCKED);
-        });
         addButton('Stop listening', stopAudio, true);
       }
     }
