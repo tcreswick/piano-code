@@ -187,6 +187,10 @@
     opacity: 0.45;
     font-style: italic;
   }
+  .footer a {
+    color: inherit;
+    text-decoration: underline;
+  }
 </style>
 </head>
 <body>
@@ -197,14 +201,17 @@
 
   <main class="card">
     <div class="lock-icon" id="lockIcon">🎹</div>
-    <div class="state-label" id="stateLabel">Ready to lock</div>
-    <div class="state-hint" id="stateHint">Paste your code from piano-config.html into this file, then press start.</div>
+    <div class="state-label" id="stateLabel">Locked</div>
+    <div class="state-hint" id="stateHint">Press start, then play your exact six-note code to unlock.</div>
     <div class="dots hidden" id="dots"></div>
     <div class="meter hidden" id="meter"><div class="meter-fill" id="meterFill"></div></div>
     <div class="btn-row" id="btnRow"></div>
     <div class="readout" id="readout"></div>
   </main>
 
+  <footer class="footer">
+    <a href="#" id="bypassLink">Testing shortcut: unlock view</a>
+  </footer>
 
   <script>
   (() => {
@@ -257,6 +264,7 @@
       meterFill: document.getElementById('meterFill'),
       btnRow: document.getElementById('btnRow'),
       readout: document.getElementById('readout'),
+      bypassLink: document.getElementById('bypassLink'),
     };
 
     function setMode(newMode) {
@@ -390,6 +398,11 @@
       setMode(STATE.INIT);
     }
 
+    function devBypass() {
+      resetProgress(true);
+      setMode(STATE.UNLOCKED);
+    }
+
     function resetProgress(silent = false) {
       detected = [];
       els.readout.textContent = '';
@@ -509,6 +522,13 @@
     function pulseIcon() {
       els.lockIcon.classList.add('pulse');
       setTimeout(() => els.lockIcon.classList.remove('pulse'), 350);
+    }
+
+    if (els.bypassLink) {
+      els.bypassLink.addEventListener('click', evt => {
+        evt.preventDefault();
+        devBypass();
+      });
     }
 
     renderState();
