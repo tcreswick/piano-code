@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#f5edd6">
+<title>Toy Piano Code Configurator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT@0,9..144,300..900,0..100;1,9..144,300..900,0..100&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream: #f5edd6;
+    --paper: #fbf5e3;
+    --ink: #1d1d1d;
+    --red: #d64545;
+    --yellow: #f4b942;
+    --blue: #4878bc;
+    --green: #4a8a52;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; overscroll-behavior: none; }
+  body {
+    background: var(--cream);
+    background-image:
+      radial-gradient(circle at 18% 22%, rgba(214, 69, 69, 0.10) 0%, transparent 45%),
+      radial-gradient(circle at 82% 78%, rgba(72, 120, 188, 0.10) 0%, transparent 45%),
+      radial-gradient(circle at 50% 50%, rgba(244, 185, 66, 0.06) 0%, transparent 60%);
+    color: var(--ink);
+    font-family: 'Fraunces', serif;
+    font-feature-settings: "ss01", "ss02";
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    padding: 24px 20px;
+    max-width: 520px;
+    margin: 0 auto;
+    padding-bottom: max(24px, env(safe-area-inset-bottom));
+    padding-top: max(24px, env(safe-area-inset-top));
+  }
+  .hidden { display: none !important; }
+  .header { text-align: center; margin: 16px 0 28px; }
+  .title {
+    font-weight: 900;
+    font-size: clamp(2.2rem, 8vw, 3.2rem);
+    letter-spacing: -0.035em;
+    line-height: 0.9;
+  }
+  .title span { color: var(--blue); font-style: italic; }
+  .subtitle {
+    font-size: 0.95rem;
+    margin-top: 10px;
+    opacity: 0.65;
+    font-style: italic;
+  }
+  .card {
+    background: var(--paper);
+    border: 2.5px solid var(--ink);
+    border-radius: 28px;
+    padding: 36px 24px 28px;
+    box-shadow: 7px 7px 0 var(--ink);
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    min-height: 420px;
+    position: relative;
+    overflow: hidden;
+  }
+  .lock-icon {
+    font-size: 4.8rem;
+    line-height: 1;
+    margin-bottom: 18px;
+    filter: drop-shadow(2px 3px 0 rgba(29, 29, 29, 0.15));
+  }
+  .lock-icon.pulse { animation: pulse 0.35s; }
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.15); }
+  }
+  .state-label {
+    font-size: 1.6rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .state-hint {
+    font-size: 1rem;
+    opacity: 0.75;
+    line-height: 1.45;
+    max-width: 340px;
+  }
+  .dots {
+    display: flex;
+    gap: 12px;
+    margin: 22px 0 6px;
+    justify-content: center;
+  }
+  .dot {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 2px solid var(--ink);
+    background: transparent;
+    transition: all 0.2s ease;
+  }
+  .dot.recording { background: var(--blue); transform: scale(1.1); }
+  .meter {
+    width: 100%;
+    max-width: 240px;
+    height: 5px;
+    background: rgba(29, 29, 29, 0.08);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-top: 18px;
+  }
+  .meter-fill {
+    height: 100%;
+    background: var(--blue);
+    width: 0;
+    transition: width 0.04s linear;
+  }
+  .btn-row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 20px;
+    width: 100%;
+  }
+  .btn {
+    font-family: 'Fraunces', serif;
+    font-size: 1rem;
+    font-weight: 700;
+    background: var(--ink);
+    color: var(--cream);
+    border: none;
+    padding: 12px 24px;
+    border-radius: 14px;
+    cursor: pointer;
+    box-shadow: 4px 4px 0 var(--blue);
+    transition: transform 0.08s ease, box-shadow 0.08s ease;
+  }
+  .btn:active { transform: translate(4px, 4px); box-shadow: 0 0 0 var(--blue); }
+  .btn.secondary {
+    background: transparent;
+    color: var(--ink);
+    box-shadow: none;
+    padding: 6px 14px;
+    font-size: 0.9rem;
+    text-decoration: underline;
+    font-style: italic;
+  }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .readout {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    margin-top: 12px;
+    opacity: 0.45;
+    min-height: 1.2em;
+  }
+  .config-output {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.95);
+    border: 2px dashed var(--ink);
+    border-radius: 22px;
+    padding: 18px;
+    margin-top: 22px;
+    text-align: left;
+  }
+  .config-output p {
+    font-size: 0.9rem;
+    margin-bottom: 10px;
+    line-height: 1.4;
+  }
+  .config-output pre {
+    background: var(--paper);
+    border: 1px solid rgba(29, 29, 29, 0.15);
+    border-radius: 12px;
+    padding: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+    white-space: pre-wrap;
+    word-break: break-all;
+    margin-bottom: 12px;
+  }
+  .copy-status {
+    font-size: 0.78rem;
+    opacity: 0.65;
+    min-height: 1.2em;
+    text-align: center;
+  }
+  .footer {
+    text-align: center;
+    margin-top: 20px;
+    font-size: 0.78rem;
+    opacity: 0.45;
+    font-style: italic;
+  }
+</style>
+</head>
+<body>
+  <header class="header">
+    <h1 class="title">Toy Piano<br><span>Configurator</span></h1>
+    <p class="subtitle">capture a six-note sequence to embed in your hunt</p>
+  </header>
+
+  <main class="card">
+    <div class="lock-icon" id="lockIcon">🎼</div>
+    <div class="state-label" id="stateLabel">Tune your code</div>
+    <div class="state-hint" id="stateHint">Press start to listen, play six notes on your toy piano, then copy the generated sequence.</div>
+
+    <div class="dots hidden" id="dots"></div>
+    <div class="meter hidden" id="meter"><div class="meter-fill" id="meterFill"></div></div>
+
+    <div class="config-output hidden" id="configOutput">
+      <p>Copy this array into <code>TARGET_CODE</code> inside <strong>piano-code.html</strong>:</p>
+      <pre id="configText">[]</pre>
+      <div class="btn-row">
+        <button class="btn" id="copyBtn">Copy sequence</button>
+      </div>
+      <div class="copy-status" id="copyStatus"></div>
+    </div>
+
+    <div class="btn-row" id="btnRow"></div>
+
+    <div class="readout" id="readout"></div>
+  </main>
+
+  <footer class="footer">microphone data stays on this device</footer>
+
+  <script>
+  (() => {
+    'use strict';
+
+    const STATE = { INIT: 'init', RECORDING: 'recording', COMPLETE: 'complete' };
+    const REQUIRED_NOTES = 6;
+
+    const MIN_HZ = 150;
+    const MAX_HZ = 2500;
+    const ON_THRESHOLD = 0.025;
+    const OFF_THRESHOLD = 0.012;
+
+    let mode = STATE.INIT;
+    let audioCtx = null;
+    let analyser = null;
+    let timeBuf = null;
+    let freqBuf = null;
+    let binHz = 0;
+    let stream = null;
+
+    let noteState = 'idle';
+    let activeFrames = 0;
+    let activePeakFreq = 0;
+    let activeMaxMag = -Infinity;
+
+    let captured = [];
+    let configSnippet = '';
+    let copyTimeoutId = null;
+
+    const els = {
+      lockIcon: document.getElementById('lockIcon'),
+      stateLabel: document.getElementById('stateLabel'),
+      stateHint: document.getElementById('stateHint'),
+      dots: document.getElementById('dots'),
+      meter: document.getElementById('meter'),
+      meterFill: document.getElementById('meterFill'),
+      btnRow: document.getElementById('btnRow'),
+      readout: document.getElementById('readout'),
+      configOutput: document.getElementById('configOutput'),
+      configText: document.getElementById('configText'),
+      copyBtn: document.getElementById('copyBtn'),
+      copyStatus: document.getElementById('copyStatus'),
+    };
+
+    function setMode(newMode) {
+      mode = newMode;
+      if (mode !== STATE.RECORDING) {
+        noteState = 'idle';
+      }
+      renderState();
+    }
+
+    function renderState() {
+      els.btnRow.innerHTML = '';
+      toggleHidden(els.dots, true);
+      toggleHidden(els.meter, true);
+      toggleHidden(els.configOutput, true);
+
+      if (mode === STATE.INIT) {
+        els.lockIcon.textContent = '🎼';
+        els.stateLabel.textContent = 'Tune your code';
+        els.stateHint.textContent = 'Press start, play six notes, and capture their fingerprint.';
+        addButton('Start recording', startAudio);
+      }
+
+      if (mode === STATE.RECORDING) {
+        els.lockIcon.textContent = '🎵';
+        els.stateLabel.textContent = `Recording ${captured.length}/${REQUIRED_NOTES}`;
+        els.stateHint.textContent = 'Play each note cleanly and pause briefly between hits.';
+        renderDots();
+        toggleHidden(els.dots, false);
+        toggleHidden(els.meter, false);
+        addButton('Reset take', clearRecording, true);
+      }
+
+      if (mode === STATE.COMPLETE) {
+        els.lockIcon.textContent = '✅';
+        els.stateLabel.textContent = 'Sequence captured';
+        els.stateHint.textContent = 'Copy the snippet into TARGET_CODE on piano-code.html.';
+        toggleHidden(els.configOutput, false);
+        els.configText.textContent = configSnippet;
+        els.copyBtn.disabled = !configSnippet;
+        addButton('Record again', restartRecording);
+      }
+    }
+
+    function renderDots() {
+      els.dots.innerHTML = '';
+      for (let i = 0; i < REQUIRED_NOTES; i++) {
+        const dot = document.createElement('div');
+        dot.className = 'dot' + (i < captured.length ? ' recording' : '');
+        els.dots.appendChild(dot);
+      }
+    }
+
+    function toggleHidden(el, hidden) {
+      el.classList.toggle('hidden', hidden);
+    }
+
+    function addButton(label, onClick, secondary = false) {
+      const b = document.createElement('button');
+      b.className = 'btn' + (secondary ? ' secondary' : '');
+      b.textContent = label;
+      b.onclick = onClick;
+      els.btnRow.appendChild(b);
+      return b;
+    }
+
+    function clearRecording() {
+      captured = [];
+      noteState = 'idle';
+      activePeakFreq = 0;
+      activeMaxMag = -Infinity;
+      els.readout.textContent = '';
+      renderState();
+    }
+
+    function restartRecording() {
+      captured = [];
+      configSnippet = '';
+      clearCopyStatus();
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      setMode(STATE.RECORDING);
+    }
+
+    function finalizeSequence() {
+      configSnippet = JSON.stringify(captured.map(n => Number(n.toFixed(2))));
+      setMode(STATE.COMPLETE);
+    }
+
+    function clearCopyStatus() {
+      if (copyTimeoutId) clearTimeout(copyTimeoutId);
+      copyTimeoutId = null;
+      els.copyStatus.textContent = '';
+    }
+
+    function copyConfig() {
+      if (!configSnippet) return;
+      const text = configSnippet;
+
+      const onSuccess = () => {
+        els.copyStatus.textContent = 'Copied! Paste it inside TARGET_CODE.';
+        if (copyTimeoutId) clearTimeout(copyTimeoutId);
+        copyTimeoutId = setTimeout(() => {
+          els.copyStatus.textContent = '';
+        }, 2600);
+      };
+
+      const onFailure = (err) => {
+        console.error(err);
+        els.copyStatus.textContent = 'Copy failed. Select and copy manually.';
+      };
+
+      if (navigator.clipboard?.writeText) {
+        navigator.clipboard.writeText(text).then(onSuccess).catch(onFailure);
+      } else {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        try {
+          document.execCommand('copy');
+          onSuccess();
+        } catch (err) {
+          onFailure(err);
+        } finally {
+          document.body.removeChild(ta);
+        }
+      }
+    }
+
+    async function startAudio() {
+      if (audioCtx) {
+        await audioCtx.resume();
+        restartRecording();
+        return;
+      }
+
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            echoCancellation: false,
+            noiseSuppression: false,
+            autoGainControl: false,
+          }
+        });
+      } catch (err) {
+        els.stateLabel.textContent = 'Microphone blocked';
+        els.stateHint.textContent = 'Allow microphone access and reload.';
+        return;
+      }
+
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      audioCtx = new Ctx();
+      const source = audioCtx.createMediaStreamSource(stream);
+      analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 8192;
+      analyser.smoothingTimeConstant = 0.15;
+      source.connect(analyser);
+      timeBuf = new Float32Array(analyser.fftSize);
+      freqBuf = new Float32Array(analyser.frequencyBinCount);
+      binHz = audioCtx.sampleRate / analyser.fftSize;
+
+      restartRecording();
+      requestAnimationFrame(tick);
+    }
+
+    function tick() {
+      requestAnimationFrame(tick);
+      if (!analyser || mode !== STATE.RECORDING) return;
+
+      analyser.getFloatTimeDomainData(timeBuf);
+      let rms = 0;
+      for (let i = 0; i < timeBuf.length; i++) {
+        rms += timeBuf[i] * timeBuf[i];
+      }
+      rms = Math.sqrt(rms / timeBuf.length);
+      els.meterFill.style.width = Math.min(100, rms * 800) + '%';
+
+      if (noteState === 'idle' && rms > ON_THRESHOLD) {
+        noteState = 'active';
+        activeFrames = 0;
+        activePeakFreq = 0;
+        activeMaxMag = -Infinity;
+      }
+
+      if (noteState === 'active') {
+        activeFrames++;
+
+        if (activeFrames >= 2) {
+          analyser.getFloatFrequencyData(freqBuf);
+          const minBin = Math.max(1, Math.floor(MIN_HZ / binHz));
+          const maxBin = Math.min(freqBuf.length - 1, Math.ceil(MAX_HZ / binHz));
+          let peakMag = -Infinity;
+          let peakBin = minBin;
+          for (let i = minBin; i <= maxBin; i++) {
+            if (freqBuf[i] > peakMag) {
+              peakMag = freqBuf[i];
+              peakBin = i;
+            }
+          }
+
+          let freq = peakBin * binHz;
+          if (peakBin > 0 && peakBin < freqBuf.length - 1) {
+            const a = freqBuf[peakBin - 1];
+            const b = freqBuf[peakBin];
+            const c = freqBuf[peakBin + 1];
+            const denom = (a - 2 * b + c);
+            if (denom !== 0) {
+              const p = 0.5 * (a - c) / denom;
+              freq = (peakBin + p) * binHz;
+            }
+          }
+
+          const peakValue = freqBuf[peakBin];
+          if (peakValue > activeMaxMag) {
+            activeMaxMag = peakValue;
+            activePeakFreq = freq;
+          }
+
+          els.readout.textContent = `${freq.toFixed(1)} Hz`;
+        }
+
+        if (rms < OFF_THRESHOLD) {
+          if (activeFrames >= 3 && activePeakFreq > 0) {
+            commitNote(activePeakFreq);
+          }
+          noteState = 'idle';
+          activePeakFreq = 0;
+          activeMaxMag = -Infinity;
+          els.readout.textContent = '';
+        }
+      }
+    }
+
+    function commitNote(freq) {
+      if (mode !== STATE.RECORDING || captured.length >= REQUIRED_NOTES) return;
+      pulseIcon();
+      captured.push(freq);
+      if (captured.length === REQUIRED_NOTES) {
+        finalizeSequence();
+      } else {
+        renderState();
+      }
+    }
+
+    function pulseIcon() {
+      els.lockIcon.classList.add('pulse');
+      setTimeout(() => els.lockIcon.classList.remove('pulse'), 350);
+    }
+
+    els.copyBtn.addEventListener('click', copyConfig);
+    renderState();
+  })();
+  </script>
+</body>
+</html>
