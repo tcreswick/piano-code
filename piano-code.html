@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#f5edd6">
+<title>Toy Piano Lock</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT@0,9..144,300..900,0..100;1,9..144,300..900,0..100&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream: #f5edd6;
+    --paper: #fbf5e3;
+    --ink: #1d1d1d;
+    --red: #d64545;
+    --yellow: #f4b942;
+    --blue: #4878bc;
+    --green: #4a8a52;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; overscroll-behavior: none; }
+  body {
+    background: var(--cream);
+    background-image:
+      radial-gradient(circle at 18% 22%, rgba(214, 69, 69, 0.10) 0%, transparent 45%),
+      radial-gradient(circle at 82% 78%, rgba(72, 120, 188, 0.10) 0%, transparent 45%),
+      radial-gradient(circle at 50% 50%, rgba(244, 185, 66, 0.06) 0%, transparent 60%);
+    color: var(--ink);
+    font-family: 'Fraunces', serif;
+    font-feature-settings: "ss01", "ss02";
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    padding: 24px 20px;
+    max-width: 520px;
+    margin: 0 auto;
+    padding-bottom: max(24px, env(safe-area-inset-bottom));
+    padding-top: max(24px, env(safe-area-inset-top));
+  }
+  .hidden { display: none !important; }
+  .header { text-align: center; margin: 16px 0 28px; }
+  .title {
+    font-weight: 900;
+    font-size: clamp(2.4rem, 9vw, 3.4rem);
+    letter-spacing: -0.035em;
+    line-height: 0.88;
+  }
+  .title span { color: var(--red); font-style: italic; }
+  .subtitle {
+    font-size: 0.95rem;
+    margin-top: 10px;
+    opacity: 0.6;
+    font-style: italic;
+  }
+  .card {
+    background: var(--paper);
+    border: 2.5px solid var(--ink);
+    border-radius: 28px;
+    padding: 36px 24px 28px;
+    box-shadow: 7px 7px 0 var(--ink);
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    min-height: 380px;
+    position: relative;
+    overflow: hidden;
+  }
+  .lock-icon {
+    font-size: 5rem;
+    line-height: 1;
+    margin-bottom: 18px;
+    filter: drop-shadow(2px 3px 0 rgba(29, 29, 29, 0.15));
+  }
+  .lock-icon.shake { animation: shake 0.4s; }
+  .lock-icon.celebrate { animation: celebrate 0.7s; }
+  .lock-icon.pulse { animation: pulse 0.35s; }
+  @keyframes shake {
+    0%, 100% { transform: translateX(0) rotate(0); }
+    20% { transform: translateX(-10px) rotate(-5deg); }
+    50% { transform: translateX(10px) rotate(5deg); }
+    80% { transform: translateX(-6px) rotate(-2deg); }
+  }
+  @keyframes celebrate {
+    0% { transform: scale(1) rotate(0); }
+    30% { transform: scale(1.5) rotate(-15deg); }
+    60% { transform: scale(1.3) rotate(12deg); }
+    100% { transform: scale(1) rotate(0); }
+  }
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.15); }
+  }
+  .state-label {
+    font-size: 1.6rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .state-hint {
+    font-size: 1rem;
+    opacity: 0.7;
+    font-style: italic;
+    line-height: 1.45;
+    max-width: 320px;
+  }
+  .dots {
+    display: flex;
+    gap: 12px;
+    margin: 22px 0 6px;
+    flex-wrap: wrap;
+    justify-content: center;
+    min-height: 28px;
+  }
+  .dot {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 2px solid var(--ink);
+    background: transparent;
+    transition: all 0.2s ease;
+  }
+  .dot.filled { background: var(--green); transform: scale(1.18); }
+  .dot.wrong { background: var(--red); animation: shake 0.35s; }
+  .btn-row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 20px;
+    width: 100%;
+  }
+  .btn {
+    font-family: 'Fraunces', serif;
+    font-weight: 700;
+    font-size: 1.05rem;
+    background: var(--ink);
+    color: var(--cream);
+    border: none;
+    padding: 14px 26px;
+    border-radius: 14px;
+    cursor: pointer;
+    box-shadow: 4px 4px 0 var(--red);
+    transition: transform 0.08s ease, box-shadow 0.08s ease;
+    touch-action: manipulation;
+  }
+  .btn:active { transform: translate(4px, 4px); box-shadow: 0 0 0 var(--red); }
+  .btn.secondary {
+    background: transparent;
+    color: var(--ink);
+    box-shadow: none;
+    padding: 6px 14px;
+    font-size: 0.9rem;
+    text-decoration: underline;
+    font-style: italic;
+  }
+  .btn:disabled { opacity: 0.35; }
+  .meter {
+    width: 100%;
+    max-width: 220px;
+    height: 5px;
+    background: rgba(29, 29, 29, 0.08);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-top: 18px;
+  }
+  .meter-fill {
+    height: 100%;
+    background: var(--blue);
+    width: 0;
+    transition: width 0.04s linear;
+  }
+  .readout {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    margin-top: 12px;
+    opacity: 0.45;
+    text-align: center;
+    min-height: 1.2em;
+    letter-spacing: 0.02em;
+  }
+  .footer {
+    text-align: center;
+    margin-top: 20px;
+    font-size: 0.78rem;
+    opacity: 0.45;
+    font-style: italic;
+  }
+</style>
+</head>
+<body>
+  <header class="header">
+    <h1 class="title">Toy Piano<br><span>Lock</span></h1>
+    <p class="subtitle">play the six-note code to continue</p>
+  </header>
+
+  <main class="card">
+    <div class="lock-icon" id="lockIcon">🎹</div>
+    <div class="state-label" id="stateLabel">Ready to lock</div>
+    <div class="state-hint" id="stateHint">Paste your code from piano-config.html into this file, then press start.</div>
+    <div class="dots hidden" id="dots"></div>
+    <div class="meter hidden" id="meter"><div class="meter-fill" id="meterFill"></div></div>
+    <div class="btn-row" id="btnRow"></div>
+    <div class="readout" id="readout"></div>
+  </main>
+
+  <footer class="footer">set TARGET_CODE in this file with the array exported by piano-config.html</footer>
+
+  <script>
+  (() => {
+    'use strict';
+
+    const REQUIRED_NOTES = 6;
+    const TARGET_CODE = Object.freeze([
+      // Replace these frequency values with the array from piano-config.html:
+      523.25,
+      587.33,
+      659.25,
+      523.25,
+      698.46,
+      784.00,
+    ]);
+
+    const CODE_VALID = TARGET_CODE.length === REQUIRED_NOTES && TARGET_CODE.every(n => Number.isFinite(n));
+
+    const STATE = { INIT: 'init', LOCKED: 'locked', UNLOCKED: 'unlocked' };
+
+    const MIN_HZ = 150;
+    const MAX_HZ = 2500;
+    const ON_THRESHOLD = 0.025;
+    const OFF_THRESHOLD = 0.012;
+    const TOLERANCE_HZ = 18;
+    const RESET_TIMEOUT_MS = 3500;
+
+    let mode = STATE.INIT;
+    let audioCtx = null;
+    let analyser = null;
+    let timeBuf = null;
+    let freqBuf = null;
+    let binHz = 0;
+    let stream = null;
+
+    let noteState = 'idle';
+    let activeFrames = 0;
+    let activePeakFreq = 0;
+    let activeMaxMag = -Infinity;
+
+    let detected = [];
+    let lastNoteTime = 0;
+
+    const els = {
+      lockIcon: document.getElementById('lockIcon'),
+      stateLabel: document.getElementById('stateLabel'),
+      stateHint: document.getElementById('stateHint'),
+      dots: document.getElementById('dots'),
+      meter: document.getElementById('meter'),
+      meterFill: document.getElementById('meterFill'),
+      btnRow: document.getElementById('btnRow'),
+      readout: document.getElementById('readout'),
+    };
+
+    function setMode(newMode) {
+      mode = newMode;
+      renderState();
+    }
+
+    function renderState() {
+      els.btnRow.innerHTML = '';
+      els.dots.innerHTML = '';
+
+      if (mode === STATE.INIT) {
+        els.lockIcon.textContent = '🎹';
+        els.stateLabel.textContent = 'Ready to lock';
+        if (CODE_VALID) {
+          els.stateHint.textContent = 'Press start, then play your exact six-note code to unlock.';
+        } else {
+          els.stateHint.textContent = 'Set TARGET_CODE in this file to six frequencies from piano-config.html.';
+        }
+        els.meter.classList.add('hidden');
+        els.dots.classList.add('hidden');
+        const startBtn = addButton('Start listening', startAudio);
+        if (!CODE_VALID) {
+          startBtn.disabled = true;
+          startBtn.textContent = 'Set TARGET_CODE first';
+        }
+      }
+
+      if (mode === STATE.LOCKED) {
+        els.lockIcon.textContent = '🔒';
+        els.stateLabel.textContent = 'Locked';
+        els.stateHint.textContent = 'Play the six-note code to continue.';
+        renderDots(detected.length);
+        els.meter.classList.remove('hidden');
+        els.dots.classList.remove('hidden');
+        addButton('Reset progress', resetProgress, true);
+        addButton('Stop listening', stopAudio, true);
+      }
+
+      if (mode === STATE.UNLOCKED) {
+        els.lockIcon.textContent = '🔓';
+        els.lockIcon.classList.add('celebrate');
+        setTimeout(() => els.lockIcon.classList.remove('celebrate'), 700);
+        els.stateLabel.textContent = 'Unlocked';
+        els.stateHint.textContent = 'Welcome back.';
+        els.meter.classList.add('hidden');
+        els.dots.classList.add('hidden');
+        addButton('Lock again', () => {
+          resetProgress(true);
+          setMode(STATE.LOCKED);
+        });
+        addButton('Stop listening', stopAudio, true);
+      }
+    }
+
+    function renderDots(filled) {
+      for (let i = 0; i < TARGET_CODE.length; i++) {
+        const dot = document.createElement('div');
+        let cls = 'dot';
+        if (i < filled) cls += ' filled';
+        dot.className = cls;
+        els.dots.appendChild(dot);
+      }
+    }
+
+    function addButton(label, onClick, secondary = false) {
+      const b = document.createElement('button');
+      b.className = 'btn' + (secondary ? ' secondary' : '');
+      b.textContent = label;
+      b.onclick = onClick;
+      els.btnRow.appendChild(b);
+      return b;
+    }
+
+    async function startAudio() {
+      if (!CODE_VALID) return;
+      if (audioCtx) {
+        await audioCtx.resume();
+        resetProgress(true);
+        setMode(STATE.LOCKED);
+        return;
+      }
+
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            echoCancellation: false,
+            noiseSuppression: false,
+            autoGainControl: false,
+          }
+        });
+      } catch (err) {
+        els.stateLabel.textContent = 'Microphone blocked';
+        els.stateHint.textContent = 'Allow microphone access and reload.';
+        return;
+      }
+
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      audioCtx = new Ctx();
+      const source = audioCtx.createMediaStreamSource(stream);
+      analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 8192;
+      analyser.smoothingTimeConstant = 0.15;
+      source.connect(analyser);
+      timeBuf = new Float32Array(analyser.fftSize);
+      freqBuf = new Float32Array(analyser.frequencyBinCount);
+      binHz = audioCtx.sampleRate / analyser.fftSize;
+
+      resetProgress(true);
+      setMode(STATE.LOCKED);
+      requestAnimationFrame(tick);
+    }
+
+    function stopAudio() {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+        stream = null;
+      }
+      if (audioCtx) {
+        audioCtx.close().catch(() => {});
+        audioCtx = null;
+      }
+      analyser = null;
+      timeBuf = null;
+      freqBuf = null;
+      binHz = 0;
+      noteState = 'idle';
+      activePeakFreq = 0;
+      activeMaxMag = -Infinity;
+      resetProgress(true);
+      setMode(STATE.INIT);
+    }
+
+    function resetProgress(silent = false) {
+      detected = [];
+      els.readout.textContent = '';
+      lastNoteTime = 0;
+      if (!silent) renderState();
+    }
+
+    function tick() {
+      requestAnimationFrame(tick);
+      if (!analyser || mode !== STATE.LOCKED) return;
+
+      analyser.getFloatTimeDomainData(timeBuf);
+      let rms = 0;
+      for (let i = 0; i < timeBuf.length; i++) {
+        rms += timeBuf[i] * timeBuf[i];
+      }
+      rms = Math.sqrt(rms / timeBuf.length);
+      els.meterFill.style.width = Math.min(100, rms * 800) + '%';
+
+      if (detected.length > 0 && performance.now() - lastNoteTime > RESET_TIMEOUT_MS) {
+        resetProgress(false);
+      }
+
+      if (noteState === 'idle' && rms > ON_THRESHOLD) {
+        noteState = 'active';
+        activeFrames = 0;
+        activePeakFreq = 0;
+        activeMaxMag = -Infinity;
+      }
+
+      if (noteState === 'active') {
+        activeFrames++;
+
+        if (activeFrames >= 2) {
+          analyser.getFloatFrequencyData(freqBuf);
+          const minBin = Math.max(1, Math.floor(MIN_HZ / binHz));
+          const maxBin = Math.min(freqBuf.length - 1, Math.ceil(MAX_HZ / binHz));
+          let peakMag = -Infinity;
+          let peakBin = minBin;
+          for (let i = minBin; i <= maxBin; i++) {
+            if (freqBuf[i] > peakMag) {
+              peakMag = freqBuf[i];
+              peakBin = i;
+            }
+          }
+
+          let freq = peakBin * binHz;
+          if (peakBin > 0 && peakBin < freqBuf.length - 1) {
+            const a = freqBuf[peakBin - 1];
+            const b = freqBuf[peakBin];
+            const c = freqBuf[peakBin + 1];
+            const denom = (a - 2 * b + c);
+            if (denom !== 0) {
+              const p = 0.5 * (a - c) / denom;
+              freq = (peakBin + p) * binHz;
+            }
+          }
+
+          const peakValue = freqBuf[peakBin];
+          if (peakValue > activeMaxMag) {
+            activeMaxMag = peakValue;
+            activePeakFreq = freq;
+          }
+
+          els.readout.textContent = `${freq.toFixed(1)} Hz`;
+        }
+
+        if (rms < OFF_THRESHOLD) {
+          if (activeFrames >= 3 && activePeakFreq > 0) {
+            commitNote(activePeakFreq);
+          }
+          noteState = 'idle';
+          activePeakFreq = 0;
+          activeMaxMag = -Infinity;
+          els.readout.textContent = '';
+        }
+      }
+    }
+
+    function commitNote(freq) {
+      if (mode !== STATE.LOCKED) return;
+      lastNoteTime = performance.now();
+      pulseIcon();
+
+      const expected = TARGET_CODE[detected.length];
+      if (typeof expected !== 'number') return;
+
+      if (Math.abs(freq - expected) <= TOLERANCE_HZ) {
+        detected.push(freq);
+        if (detected.length === TARGET_CODE.length) {
+          setMode(STATE.UNLOCKED);
+        } else {
+          renderState();
+        }
+      } else {
+        flashWrong();
+        resetProgress(true);
+        setTimeout(renderState, 400);
+      }
+    }
+
+    function flashWrong() {
+      els.lockIcon.classList.add('shake');
+      els.dots.querySelectorAll('.dot').forEach(dot => dot.classList.add('wrong'));
+      setTimeout(() => {
+        els.lockIcon.classList.remove('shake');
+        els.dots.querySelectorAll('.dot').forEach(dot => dot.classList.remove('wrong'));
+      }, 400);
+    }
+
+    function pulseIcon() {
+      els.lockIcon.classList.add('pulse');
+      setTimeout(() => els.lockIcon.classList.remove('pulse'), 350);
+    }
+
+    renderState();
+  })();
+  </script>
+</body>
+</html>
