@@ -248,6 +248,7 @@
 
     let detected = [];
     let lastNoteTime = 0;
+    let hasMismatch = false;
 
     const els = {
       lockIcon: document.getElementById('lockIcon'),
@@ -395,6 +396,7 @@
       detected = [];
       els.readout.textContent = '';
       lastNoteTime = 0;
+      hasMismatch = false;
       if (!silent) renderState();
     }
 
@@ -472,23 +474,28 @@
 
     function commitNote(freq) {
       if (mode !== STATE.LOCKED) return;
+      if (detected.length >= TARGET_CODE.length) return;
       lastNoteTime = performance.now();
       pulseIcon();
 
-      const expected = TARGET_CODE[detected.length];
-      if (typeof expected !== 'number') return;
+      detected.push(freq);
+      const expected = TARGET_CODE[detected.length - 1];
+      if (typeof expected !== 'number' || Math.abs(freq - expected) > TOLERANCE_HZ) {
+        hasMismatch = true;
+      }
 
-      if (Math.abs(freq - expected) <= TOLERANCE_HZ) {
-        detected.push(freq);
-        if (detected.length === TARGET_CODE.length) {
+      if (detected.length === TARGET_CODE.length) {
+        if (!hasMismatch) {
           setMode(STATE.UNLOCKED);
         } else {
-          renderState();
+          flashWrong();
+          setTimeout(() => {
+            resetProgress(true);
+            renderState();
+          }, 400);
         }
       } else {
-        flashWrong();
-        resetProgress(true);
-        setTimeout(renderState, 400);
+        renderState();
       }
     }
 
