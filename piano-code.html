@@ -180,17 +180,6 @@
     min-height: 1.2em;
     letter-spacing: 0.02em;
   }
-  .footer {
-    text-align: center;
-    margin-top: 20px;
-    font-size: 0.78rem;
-    opacity: 0.45;
-    font-style: italic;
-  }
-  .footer a {
-    color: inherit;
-    text-decoration: underline;
-  }
 </style>
 </head>
 <body>
@@ -208,10 +197,6 @@
     <div class="btn-row" id="btnRow"></div>
     <div class="readout" id="readout"></div>
   </main>
-
-  <footer class="footer">
-    <a href="#" id="bypassLink">Testing shortcut: unlock view</a>
-  </footer>
 
   <script>
   (() => {
@@ -264,7 +249,6 @@
       meterFill: document.getElementById('meterFill'),
       btnRow: document.getElementById('btnRow'),
       readout: document.getElementById('readout'),
-      bypassLink: document.getElementById('bypassLink'),
     };
 
     function setMode(newMode) {
@@ -394,11 +378,6 @@
       setMode(STATE.INIT);
     }
 
-    function devBypass() {
-      resetProgress(true);
-      setMode(STATE.UNLOCKED);
-    }
-
     function resetProgress(silent = false) {
       detected = [];
       els.readout.textContent = '';
@@ -518,13 +497,6 @@
     function pulseIcon() {
       els.lockIcon.classList.add('pulse');
       setTimeout(() => els.lockIcon.classList.remove('pulse'), 350);
-    }
-
-    if (els.bypassLink) {
-      els.bypassLink.addEventListener('click', evt => {
-        evt.preventDefault();
-        devBypass();
-      });
     }
 
     renderState();
